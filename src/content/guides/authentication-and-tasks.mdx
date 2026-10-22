@@ -1,0 +1,166 @@
+---
+title: Authentication and Tasks
+description: Register, authenticate, create tasks, and manage your tasks with the TaskSocial API.
+---
+
+This guide walks through the main TaskSocial API workflow: registering an account, logging in, creating a task, retrieving tasks, and updating or deleting a task.
+
+## Before you begin
+
+You need:
+
+- `curl` installed.
+- Access to the TaskSocial API.
+- A unique email address if you plan to register a new account.
+
+Set the production API URL:
+
+```bash
+export TASKSOCIAL_API="https://tasksocial-p2cw.onrender.com"
+```
+
+## 1. Register an account
+
+Send a `POST` request to `/api/v1/auth/register`:
+
+```bash
+curl -i -X POST \
+  "$TASKSOCIAL_API/api/v1/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "example-user",
+    "email": "you@example.com",
+    "password": "replace-with-a-strong-password"
+  }'
+```
+
+A successful registration returns `201 Created` with the new user's information.
+
+If registration returns `400 Bad Request`, check that all required fields are present and that the email address has not already been registered.
+
+## 2. Log in and save the cookie
+
+Log in using the credentials for your account:
+
+```bash
+curl -i -c cookies.txt \
+  -X POST "$TASKSOCIAL_API/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "you@example.com",
+    "password": "replace-with-your-password"
+  }'
+```
+
+The server verifies the credentials and sets an HTTP-only `tokenName` cookie containing the JWT.
+
+The `-c cookies.txt` option saves the cookie for later requests. Keep this file private and do not commit it to your repository.
+
+## 3. Create a task
+
+Send a `POST` request to `/api/v1/tasks/create` with a title and description:
+
+```bash
+curl -i -b cookies.txt \
+  -X POST "$TASKSOCIAL_API/api/v1/tasks/create" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Finish API documentation",
+    "description": "Document and test the TaskSocial API"
+  }'
+```
+
+A successful request returns `201 Created`. The task is associated with the authenticated user.
+
+Both `title` and `description` are required.
+
+## 4. Retrieve your tasks
+
+Retrieve tasks belonging to your account:
+
+```bash
+curl -i -b cookies.txt \
+  "$TASKSOCIAL_API/api/v1/tasks/my-tasks"
+```
+
+A successful response returns `200 OK` and includes a `Tasks` array.
+
+This endpoint retrieves the authenticated user's tasks, not an unrestricted list of every task.
+
+## 5. View the shared task feed
+
+To retrieve the shared task feed, send:
+
+```bash
+curl -i -b cookies.txt \
+  "$TASKSOCIAL_API/api/v1/tasks/feed"
+```
+
+This endpoint also requires authentication. It returns the shared feed in a `Feed` array.
+
+## 6. Update a task
+
+Use `PUT /api/v1/tasks/{id}` to update a task. Replace `{id}` with the task's actual ID from an API response.
+
+For example:
+
+```bash
+curl -i -b cookies.txt \
+  -X PUT "$TASKSOCIAL_API/api/v1/tasks/REPLACE_WITH_TASK_ID" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "title": "Finish TaskSocial documentation",
+    "description": "Document and validate the API",
+    "status": "completed"
+  }'
+```
+
+The supported status values are `pending` and `completed`. The request can include the fields you want to update.
+
+The authenticated user must own the task. A successful update returns `200 OK`.
+
+## 7. Delete a task
+
+Use `DELETE /api/v1/tasks/{id}` with the ID of a task you own:
+
+```bash
+curl -i -b cookies.txt \
+  -X DELETE "$TASKSOCIAL_API/api/v1/tasks/REPLACE_WITH_TASK_ID"
+```
+
+A successful deletion returns `200 OK`.
+
+Do not use a real task ID unless you intend to delete that task. The backend checks task ownership before allowing the deletion.
+
+## How task ownership works
+
+TaskSocial uses authentication and authorization for protected task operations.
+
+```text
+Request
+   ↓
+Verify JWT
+   ↓
+Identify authenticated user
+   ↓
+Find requested task
+   ↓
+Check task ownership
+   ↓
+Perform the operation
+```
+
+Authentication identifies the user. Authorization determines whether that user is allowed to modify or delete the requested task.
+
+## Troubleshooting
+
+| Status | What to check |
+| --- | --- |
+| `400 Bad Request` | Check required fields and request-body values. |
+| `401 Unauthorized` | Log in again and ensure the request sends `cookies.txt`. |
+| `403 Forbidden` | Confirm that the task belongs to the authenticated user. |
+| `404 Not Found` | Check the endpoint path and task ID. |
+
+## Next step
+
+See the [API Reference](/api/introduction) for endpoint schemas and responses, or read [Authentication](/api/authentication) for more detail about the JWT cookie.

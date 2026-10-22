@@ -1,53 +1,116 @@
 ---
 title: Authentication
-description: How to authenticate requests, and how to document your own scheme.
+description: Register, log in, and send authenticated requests to the TaskSocial API.
 ---
 
-The Sample Posts API is intentionally public: no key, token, or header is
-required, so every request in this reference works the moment you press
-**Send**.
+TaskSocial uses JWT-based authentication with an HTTP-only cookie named `tokenName`.
 
-Your API almost certainly is not public. This page shows how to document the
-two most common schemes so readers always know exactly what to put in the
-request — replace it with the scheme your API uses.
+You do not need to generate an API key manually. After a successful login, the server sets the cookie. Your HTTP client must retain and send it when making requests to protected endpoints.
 
-## Documenting a bearer token
+## Authentication flow
 
-Show the header exactly as readers must send it, then where the token comes
-from:
+```text
+Register
+   ↓
+Log in
+   ↓
+Server verifies credentials
+   ↓
+JWT is stored in the tokenName cookie
+   ↓
+Client sends cookie with protected requests
+   ↓
+Server verifies JWT
+   ↓
+Request continues
+```
+
+## Register a user
+
+Send a `POST` request to `/api/v1/auth/register` with a username, email address, and password.
 
 ```bash
-curl --request GET \
-  --url 'https://api.yourproduct.com/v1/posts' \
-  --header 'Authorization: Bearer YOUR_API_TOKEN'
+curl -i -X POST \
+  "https://tasksocial-p2cw.onrender.com/api/v1/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "example-user",
+    "email": "you@example.com",
+    "password": "replace-with-a-strong-password"
+  }'
 ```
 
-## Documenting an API key
+A successful registration returns `201 Created`.
+
+Use a unique email address when testing registration. If the request returns `400 Bad Request`, check that all required fields are present and that the email address has not already been registered.
+
+## Log in
+
+Send a `POST` request to `/api/v1/auth/login`:
 
 ```bash
-curl --request GET \
-  --url 'https://api.yourproduct.com/v1/posts' \
-  --header 'X-Api-Key: YOUR_API_KEY'
+curl -i -c cookies.txt \
+  -X POST \
+  "https://tasksocial-p2cw.onrender.com/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "you@example.com",
+    "password": "replace-with-your-password"
+  }'
 ```
 
-## Declare the scheme in OpenAPI
+A successful login returns `200 OK` and sets the `tokenName` cookie.
 
-Add a security scheme to `openapi.yaml` and the generated endpoint pages will
-show the requirement — and the playground will prompt for the credential —
-automatically:
+The `-c cookies.txt` option saves the cookie to a local file. Keep this file private because it contains authentication information.
 
-```yaml
-components:
-  securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-security:
-  - bearerAuth: []
+## Make an authenticated request
+
+Send the saved cookie with a protected request:
+
+```bash
+curl -i -b cookies.txt \
+  "https://tasksocial-p2cw.onrender.com/api/v1/tasks/my-tasks"
 ```
 
-<Tip>
-  Tell readers where to create and revoke credentials, how long they live, and
-  what happens when one expires. Those three answers prevent most
-  authentication support tickets.
-</Tip>
+The `-b cookies.txt` option sends the saved cookie. If the cookie is valid, the API returns the authenticated user's tasks.
+
+## Log out
+
+Send a `POST` request to `/api/v1/auth/logout`:
+
+```bash
+curl -i -b cookies.txt \
+  -X POST \
+  "https://tasksocial-p2cw.onrender.com/api/v1/auth/logout"
+```
+
+The server clears the authentication cookie.
+
+## Authentication and authorization
+
+Authentication verifies the user's identity. Authorization determines whether the authenticated user can perform an operation.
+
+For TaskSocial, task creation, task retrieval, feed access, updates, and deletions require authentication. Updates and deletions also check task ownership.
+
+## Troubleshooting
+
+### `400 Bad Request`
+
+Check the request body and credentials. During registration, make sure all required fields are included and the email is not already registered.
+
+### `401 Unauthorized`
+
+Log in again, check that the cookie file was created, and make sure the protected request includes it.
+
+### `403 Forbidden`
+
+For task updates and deletions, check that the task belongs to the authenticated user.
+
+## Security notes
+
+- Do not commit `cookies.txt` or share its contents.
+- Do not place real passwords in public documentation, source code, or screenshots.
+- Use test credentials when demonstrating requests.
+- The cookie is HTTP-only, so browser JavaScript cannot directly read the token.
+
+For the complete list of operations and schemas, return to the [API overview](/api/introduction).

@@ -1,45 +1,70 @@
 ---
-title: Introduction
-description: Give readers a clear path from their first question to a result they can verify.
+title: TaskSocial Documentation
+description: Learn to authenticate with TaskSocial, manage your tasks, and use the TaskSocial REST API.
 mode: home
 ---
 
 <Hero
-  title="Build documentation around the reader"
-  subtitle="Start with a useful first result, organize what follows, and publish every format from one reviewable source."
+  title="Build and manage tasks with TaskSocial"
+  subtitle="Learn how to authenticate, create tasks, track your work, and interact with the shared task feed."
   primaryLabel="Get started"
   primaryHref="/quickstart"
-  secondaryLabel="Publish your docs"
-  secondaryHref="/guides/create-a-site"
+  secondaryLabel="Explore the API"
+  secondaryHref="/api/introduction"
 />
 
-## Build the reader journey
+## Start here
 
-Begin with the task that brings most readers to your documentation, then make
-the next useful step obvious.
-
-<CardGroup cols="2">
-  <Card title="Write your quickstart" icon="party-horn" href="/quickstart">
-    Turn prerequisites, setup, one realistic task, and verification into a short path.
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Log in to TaskSocial, retrieve your tasks, and verify your first
+    authenticated request.
   </Card>
-  <Card title="Organize your navigation" icon="grid-round" href="/customization">
-    Group related tasks and references around how people use your product.
+  <Card
+    title="Authentication and tasks"
+    icon="key-round"
+    href="/guides/authentication-and-tasks"
+  >
+    Follow the registration, login, task creation, and task management workflow.
   </Card>
-  <Card title="Document your API" icon="code-simple" href="/api">
-    Replace `openapi.yaml` to publish browsable endpoint docs with a live playground.
+  <Card title="API reference" icon="code" href="/api/introduction">
+    Explore available endpoints, request bodies, authentication requirements,
+    and responses.
   </Card>
-  <Card title="Learn the Thally workflow" icon="wrench" href="/guides/create-a-site">
-    Create, publish, and update sites from the Cloud dashboard, the CLI, or your AI tools.
+  <Card title="Authentication" icon="shield-check" href="/api/authentication">
+    Understand the JWT cookie used by protected TaskSocial endpoints.
   </Card>
 </CardGroup>
 
-## Publish from one source
+## What is TaskSocial?
 
-Thally turns the same reviewed content into HTML, search, agent discovery files,
-Markdown mirrors, and a read-only MCP surface — so people and AI tools read the
-same, current answer. Add only the locales your readers need.
+TaskSocial is a social accountability application where users can create tasks, track their progress, and view a shared task feed.
 
-<Note type="info" title="Start with the product, not the template">
-  Replace this page with the questions, terminology, and workflows your readers
-  already use. Keep `docs.json` focused on the path between those tasks.
-</Note>
+The REST API supports account registration, login, task creation, retrieving a user's tasks, viewing the shared feed, updating tasks, and deleting tasks.
+
+## How authentication works
+
+TaskSocial uses a JWT stored in an HTTP-only cookie named `tokenName`.
+
+After logging in, your HTTP client must retain and send this cookie when calling protected endpoints. Task updates and deletions also require the authenticated user to own the target task.
+
+## API base URL
+
+The production API is hosted on Render:
+
+```text
+https://tasksocial-p2cw.onrender.com
+```
+
+All API endpoints use the `/api/v1` path prefix. For example, the login endpoint is:
+
+```text
+POST /api/v1/auth/login
+```
+
+## Choose your next step
+
+- New to the API? Start with the [Quickstart](/quickstart).
+- Need to understand login and cookies? Read [Authentication](/api/authentication).
+- Want to create and manage tasks? Follow [Authentication and Tasks](/guides/authentication-and-tasks).
+- Looking for an endpoint or response schema? Open the [API Reference](/api/introduction).

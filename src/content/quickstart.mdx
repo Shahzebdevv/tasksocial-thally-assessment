@@ -1,47 +1,99 @@
 ---
 title: Quickstart
-description: Guide a new reader through one useful workflow and show them how to verify it.
+description: Authenticate with the TaskSocial API and retrieve your tasks using curl.
 ---
 
-A strong quickstart produces one meaningful result. Replace the placeholders
-below with the shortest supported path for your product.
+This quickstart shows you how to log in to TaskSocial and retrieve the tasks associated with your account.
+
+You'll use `curl` to send requests and a cookie jar to retain the authentication cookie between requests.
 
 ## Before you begin
 
-List only the requirements needed for this workflow:
+You need:
 
-- An account or credential, when required
-- A supported runtime, device, browser, or operating system
-- Permission to create or change the resource used in the example
+- A registered TaskSocial account.
+- `curl` installed on your computer.
+- Access to the TaskSocial production API.
 
-<Steps>
-  <Step title="Install the required tool">
-    Give readers one recommended installation command.
+The production API base URL is:
 
-    ```bash
-    npm install your-package
-    ```
-  </Step>
-  <Step title="Add the minimum configuration">
-    Include only the values needed for the first successful run.
+```text
+https://tasksocial-p2cw.onrender.com
+```
 
-    ```bash
-    your-cli init
-    ```
-  </Step>
-  <Step title="Complete the first task">
-    Use a realistic example that produces an observable result.
+If you don't have an account, register using `POST /api/v1/auth/register` before continuing. See the [Authentication reference](/api/authentication) for details.
 
-    ```bash
-    your-cli start
-    ```
-  </Step>
-  <Step title="Verify the result">
-    State exactly what the reader should see and how to recover when it does not appear.
-  </Step>
-</Steps>
+## 1. Set the API URL
 
-## Choose the next task
+Open a terminal and set the base URL:
 
-Link to the guide that naturally follows this result. Avoid ending the reader’s
-journey with a generic list of every feature.
+```bash
+export TASKSOCIAL_API="https://tasksocial-p2cw.onrender.com"
+```
+
+The examples below use this variable to avoid repeating the full URL.
+
+## 2. Log in
+
+Run the following command, replacing the example email and password with your own credentials:
+
+```bash
+curl -i -c cookies.txt \
+  -X POST "$TASKSOCIAL_API/api/v1/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "you@example.com",
+    "password": "replace-with-your-password"
+  }'
+```
+
+A successful login returns `200 OK` and sets an HTTP-only cookie named `tokenName`.
+
+The `-c cookies.txt` option saves cookies received from the server so that you can reuse them in the next request.
+
+**Keep `cookies.txt` private.** It contains authentication information. Do not commit it to Git or share it with anyone.
+
+## 3. Retrieve your tasks
+
+Use the saved cookie to call the endpoint for your own tasks:
+
+```bash
+curl -i -b cookies.txt \
+  "$TASKSOCIAL_API/api/v1/tasks/my-tasks"
+```
+
+The `-b cookies.txt` option sends the saved cookie with the request.
+
+A successful request returns `200 OK` with a `Tasks` array containing tasks associated with your authenticated account.
+
+## 4. Verify the result
+
+Check the response:
+
+- The HTTP status should be `200 OK` when the request succeeds.
+- The response should contain the `Tasks` field.
+- The returned tasks should belong to the authenticated user.
+
+If the account has no tasks yet, the array may be empty.
+
+## Troubleshooting
+
+### `400 Bad Request` during login
+
+Check that you supplied both the correct email and password. Confirm that the account is registered.
+
+### `401 Unauthorized`
+
+Log in again and confirm that `cookies.txt` was created and that your request includes `-b cookies.txt`.
+
+### The request times out
+
+The production API may be unavailable or waking from inactivity. Retry after checking the API host and your network connection.
+
+### The cookie file is missing
+
+Run the login command again and check that the command completed and wrote the cookie file in your current directory.
+
+## Next step
+
+Continue with [Authentication and Tasks](/guides/authentication-and-tasks) to register an account, create a task, retrieve tasks, and understand task ownership.

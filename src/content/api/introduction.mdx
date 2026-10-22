@@ -1,49 +1,60 @@
 ---
 title: API overview
-navTitle: Overview
-description: What this API reference covers and how to try every request live.
+description: Explore the TaskSocial REST API, its base URL, and its authentication requirements.
 ---
 
-This reference documents the Sample Posts API — a small, working API backed by
-the public [JSONPlaceholder](https://jsonplaceholder.typicode.com) service.
-Every endpoint page has a **Send** button that runs the real request from your
-browser, so you can inspect live responses before writing a line of code.
+The TaskSocial API is a REST API for account authentication and task management. Use it to register users, log in, create tasks, retrieve a user's tasks, view the shared task feed, and update or delete tasks.
 
 ## Base URL
 
-All requests use the same base URL:
+The production API is hosted on Render:
 
 ```text
-https://jsonplaceholder.typicode.com
+https://tasksocial-p2cw.onrender.com
 ```
 
-## Try your first request
+All endpoints use the `/api/v1` path prefix. For example:
 
-<Steps>
-  <Step title="Open an endpoint">
-    Pick **Get a post** from the Posts group in the sidebar.
-  </Step>
-  <Step title="Send it">
-    Keep the default id of `1` and press **Send**. The response panel shows a
-    real `200` with the post body.
-  </Step>
-  <Step title="Change the input">
-    Try an id above `100` to see the API's `404` behavior.
-  </Step>
-</Steps>
+```text
+POST https://tasksocial-p2cw.onrender.com/api/v1/auth/login
+```
 
-Writes are safe to experiment with: the demo server accepts `POST` requests
-and echoes the created resource back with a generated id without storing it.
+## Authentication
 
-## Make this reference yours
+Registration and login do not require an existing authentication cookie. After a successful login, the server sets a JWT in an HTTP-only cookie named `tokenName`.
 
-This sample exists so the reference has something real to show. To document
-your own API, replace `openapi.yaml` at the repository root with your
-specification — the endpoint pages, navigation, and playground regenerate from
-it on the next publish.
+Protected requests must include this cookie. See the [Authentication reference](/api/authentication) for the login flow and examples.
 
-<Note type="info" title="Keep the overview pages">
-  Readers orient faster when a reference opens with what the API does, how to
-  authenticate, and one runnable request. Rewrite this page and
-  [Authentication](/api/authentication) for your API instead of deleting them.
-</Note>
+## Available operations
+
+### Authentication
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/v1/auth/register` | Register a user |
+| `POST` | `/api/v1/auth/login` | Log in |
+| `POST` | `/api/v1/auth/logout` | Log out |
+
+### Tasks
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/v1/tasks/create` | Create a task |
+| `GET` | `/api/v1/tasks/my-tasks` | Retrieve your tasks |
+| `GET` | `/api/v1/tasks/feed` | Retrieve the shared task feed |
+| `PUT` | `/api/v1/tasks/{id}` | Update a task |
+| `DELETE` | `/api/v1/tasks/{id}` | Delete a task |
+
+All task endpoints require authentication. Updating and deleting a task also require the authenticated user to own it.
+
+## Try the API
+
+Use the interactive endpoint pages to inspect request bodies and responses. For protected operations, log in first and make sure the client sends the `tokenName` cookie.
+
+A `401 Unauthorized` response usually means the request is missing a valid authentication cookie. A `403 Forbidden` response from an update or delete operation means the authenticated user does not own the task.
+
+## Related guides
+
+- [Quickstart](/quickstart): make an authenticated request.
+- [Authentication](/api/authentication): understand the login and cookie flow.
+- [Authentication and Tasks](/guides/authentication-and-tasks): complete the task management workflow.
